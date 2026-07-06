@@ -14,6 +14,6 @@ let package = Package(
         .testTarget(
             name: "spmTests",
             dependencies: ["spm"]
-        ),
+        )
     ]
 )

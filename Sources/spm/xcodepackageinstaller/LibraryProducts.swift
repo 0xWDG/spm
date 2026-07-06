@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Reads library product names from a remote package manifest, falling back to naming conventions.
-public func libraryProducts(forPackageURL packageURL: String, fallbackPackageName: String) -> [String] {
+static func libraryProducts(forPackageURL packageURL: String, fallbackPackageName: String) -> [String] {
     let temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
         .appendingPathComponent("swift-package-installer-\(UUID().uuidString)")
 
@@ -60,4 +61,5 @@ public func libraryProducts(forPackageURL packageURL: String, fallbackPackageNam
     }
 
     return possibleSwiftPackageProductNames(from: fallbackPackageName)
+}
 }

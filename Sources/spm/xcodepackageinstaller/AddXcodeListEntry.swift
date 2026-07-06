@@ -11,14 +11,16 @@
 
 import Foundation
 
+public extension spm {
 /// Adds an entry to a named Xcode object list, creating the list when needed.
-public func addXcodeListEntry(object: String, listName: String, entry: String) throws -> String {
+static func addXcodeListEntry(object: String, listName: String, entry: String) throws -> String {
     if let blockRange = xcodeListBlockRange(named: listName, in: object) {
         if object[blockRange].contains(entry) {
             return object
         }
 
-        guard let closeRange = object.range(of: "\n\t\t\t);", range: blockRange.lowerBound..<blockRange.upperBound) else {
+        let searchRange = blockRange.lowerBound..<blockRange.upperBound
+        guard let closeRange = object.range(of: "\n\t\t\t);", range: searchRange) else {
             throw XcodePackageInstallerError.malformedProject("\(listName) list is missing its closing marker.")
         }
 
@@ -40,4 +42,5 @@ public func addXcodeListEntry(object: String, listName: String, entry: String) t
     var updated = object
     updated.insert(contentsOf: insertion, at: closingRange.lowerBound)
     return updated
+}
 }

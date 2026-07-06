@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Parses a Git tag or ref into a semantic version value.
-public func parseXcodePackageSemanticVersion(_ tag: String) -> XcodePackageSemanticVersion? {
+static func parseXcodePackageSemanticVersion(_ tag: String) -> XcodePackageSemanticVersion? {
     let clean = tag
         .trimmingCharacters(in: .whitespacesAndNewlines)
         .replacingOccurrences(of: "refs/tags/", with: "")
@@ -35,4 +36,5 @@ public func parseXcodePackageSemanticVersion(_ tag: String) -> XcodePackageSeman
 
     let patch = (numericParts[safe: 2] ?? nil) ?? 0
     return XcodePackageSemanticVersion(major: major, minor: minor, patch: patch, original: clean)
+}
 }

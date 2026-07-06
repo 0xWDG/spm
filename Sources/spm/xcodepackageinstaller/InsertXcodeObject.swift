@@ -11,8 +11,14 @@
 
 import Foundation
 
+public extension spm {
 /// Inserts an Xcode object into an existing or newly created project section.
-public func insertXcodeObject(_ object: String, intoSectionNamed section: String, in project: String, before fallbackSection: String) throws -> String {
+static func insertXcodeObject(
+    _ object: String,
+    intoSectionNamed section: String,
+    in project: String,
+    before fallbackSection: String
+) throws -> String {
     let endMarker = "/* End \(section) section */"
     if let endSection = project.range(of: endMarker) {
         var updated = project
@@ -30,10 +36,13 @@ public func insertXcodeObject(_ object: String, intoSectionNamed section: String
     guard let insertionPoint = project.range(of: "/* Begin \(fallbackSection) section */")?.lowerBound
         ?? project.range(of: "/* End PBXProject section */")?.upperBound
     else {
-        throw XcodePackageInstallerError.malformedProject("could not find a safe place to insert the \(section) section.")
+        throw XcodePackageInstallerError.malformedProject(
+            "could not find a safe place to insert the \(section) section."
+        )
     }
 
     var updated = project
     updated.insert(contentsOf: fullSection, at: insertionPoint)
     return updated
+}
 }

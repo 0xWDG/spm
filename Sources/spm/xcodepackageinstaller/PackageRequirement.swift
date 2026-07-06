@@ -11,9 +11,11 @@
 
 import Foundation
 
+public extension spm {
 /// Chooses an Xcode package requirement from remote tags or the default branch.
-public func packageRequirement(forPackageURL packageURL: String) -> XcodePackageRequirement {
-    if let output = try? runXcodePackageInstallerCommand("/usr/bin/git", ["ls-remote", "--tags", "--refs", packageURL]) {
+static func packageRequirement(forPackageURL packageURL: String) -> XcodePackageRequirement {
+    let arguments = ["ls-remote", "--tags", "--refs", packageURL]
+    if let output = try? runXcodePackageInstallerCommand("/usr/bin/git", arguments) {
         let versions = output
             .split(separator: "\n")
             .compactMap { line -> XcodePackageSemanticVersion? in
@@ -21,7 +23,7 @@ public func packageRequirement(forPackageURL packageURL: String) -> XcodePackage
                 return parseXcodePackageSemanticVersion(String(ref))
             }
 
-        if let latest = versions.max() {
+        if let latest = versions.max(by: isOlderXcodePackageSemanticVersion) {
             return XcodePackageRequirement(lines: [
                 "kind = upToNextMajorVersion;",
                 "minimumVersion = \(latest.original);"
@@ -34,4 +36,15 @@ public func packageRequirement(forPackageURL packageURL: String) -> XcodePackage
         "branch = \(branch);",
         "kind = branch;"
     ])
+}
+
+/// Compares semantic versions by major, minor, and patch components.
+static func isOlderXcodePackageSemanticVersion(
+    lhs: XcodePackageSemanticVersion,
+    rhs: XcodePackageSemanticVersion
+) -> Bool {
+    if lhs.major != rhs.major { return lhs.major < rhs.major }
+    if lhs.minor != rhs.minor { return lhs.minor < rhs.minor }
+    return lhs.patch < rhs.patch
+}
 }

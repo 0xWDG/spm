@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Extracts native targets that can link Swift package products.
-public func nativeTargets(inXcodeProject project: String) -> [XcodeNativeTarget] {
+static func nativeTargets(inXcodeProject project: String) -> [XcodeNativeTarget] {
     xcodeObjectRanges(containing: "isa = PBXNativeTarget;", in: project).compactMap { range in
         let object = String(project[range])
         guard let id = xcodeObjectID(from: object) else { return nil }
@@ -37,4 +38,5 @@ public func nativeTargets(inXcodeProject project: String) -> [XcodeNativeTarget]
             frameworksBuildPhaseID: phaseID
         )
     }
+}
 }

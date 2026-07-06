@@ -11,12 +11,19 @@
 
 import Foundation
 
+/// Errors that can occur while editing an Xcode project for package installation.
 public enum XcodePackageInstallerError: Error, CustomStringConvertible {
+    /// No `.xcodeproj` file was found.
     case noProjectFound
+    /// Multiple `.xcodeproj` files were found.
     case multipleProjectsFound([String])
+    /// The project file does not contain a PBXProject object.
     case missingPBXProject
+    /// The project file has an unexpected structure.
     case malformedProject(String)
+    /// No native target can link package products.
     case noLinkableTarget
+    /// A shell command failed.
     case commandFailed(String)
 
     /// Provides a user-facing error description.
@@ -25,7 +32,10 @@ public enum XcodePackageInstallerError: Error, CustomStringConvertible {
         case .noProjectFound:
             return "No .xcodeproj found in the current directory."
         case .multipleProjectsFound(let projects):
-            return "Multiple .xcodeproj files found. Run this from a directory with exactly one project: \(projects.joined(separator: ", "))"
+            return """
+            Multiple .xcodeproj files found. Run this from a directory with exactly one project: \
+            \(projects.joined(separator: ", "))
+            """
         case .missingPBXProject:
             return "Could not find the PBXProject object in project.pbxproj."
         case .malformedProject(let detail):
@@ -38,10 +48,15 @@ public enum XcodePackageInstallerError: Error, CustomStringConvertible {
     }
 }
 
-public struct XcodePackageSemanticVersion: Comparable {
+/// Semantic version parsed from an Xcode package tag.
+public struct XcodePackageSemanticVersion {
+    /// Major version component.
     public let major: Int
+    /// Minor version component.
     public let minor: Int
+    /// Patch version component.
     public let patch: Int
+    /// Original tag text.
     public let original: String
 
     /// Creates a semantic version value parsed from an Xcode package tag.
@@ -51,16 +66,11 @@ public struct XcodePackageSemanticVersion: Comparable {
         self.patch = patch
         self.original = original
     }
-
-    /// Compares semantic versions by major, minor, and patch components.
-    public static func < (lhs: XcodePackageSemanticVersion, rhs: XcodePackageSemanticVersion) -> Bool {
-        if lhs.major != rhs.major { return lhs.major < rhs.major }
-        if lhs.minor != rhs.minor { return lhs.minor < rhs.minor }
-        return lhs.patch < rhs.patch
-    }
 }
 
+/// Xcode project representation of a package version requirement.
 public struct XcodePackageRequirement {
+    /// Project-file lines used in the requirement block.
     public let lines: [String]
 
     /// Creates an Xcode package requirement from project file lines.
@@ -69,9 +79,13 @@ public struct XcodePackageRequirement {
     }
 }
 
+/// Decoded package manifest used to discover library products.
 public struct XcodePackageManifest: Decodable {
+    /// Decoded package product.
     public struct Product: Decodable {
+        /// Product name.
         public let name: String
+        /// Product type.
         public let type: ProductType
 
         /// Creates a decoded Swift package product.
@@ -81,7 +95,9 @@ public struct XcodePackageManifest: Decodable {
         }
     }
 
+    /// Decoded product type.
     public struct ProductType: Decodable {
+        /// Library product payload when the product is a library.
         public let library: [String]?
 
         /// Creates a decoded Swift package product type.
@@ -90,6 +106,7 @@ public struct XcodePackageManifest: Decodable {
         }
     }
 
+    /// Products declared by the package manifest.
     public let products: [Product]
 
     /// Creates a decoded Swift package manifest.
@@ -98,9 +115,13 @@ public struct XcodePackageManifest: Decodable {
     }
 }
 
+/// Native Xcode target that can receive a Swift package product.
 public struct XcodeNativeTarget {
+    /// Target object identifier.
     public let id: String
+    /// Target display name.
     public let name: String
+    /// Frameworks build phase object identifier.
     public let frameworksBuildPhaseID: String
 
     /// Creates a native target reference from Xcode project object metadata.

@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Finds the single Xcode project in a directory.
-public func findXcodeProject(in directory: URL) throws -> URL {
+static func findXcodeProject(in directory: URL) throws -> URL {
     let contents = try fileManager.contentsOfDirectory(
         at: directory,
         includingPropertiesForKeys: nil,
@@ -31,4 +32,5 @@ public func findXcodeProject(in directory: URL) throws -> URL {
     }
 
     return projects[0]
+}
 }

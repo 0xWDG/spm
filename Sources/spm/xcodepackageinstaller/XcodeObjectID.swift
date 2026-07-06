@@ -11,11 +11,13 @@
 
 import Foundation
 
+public extension spm {
 /// Extracts the object identifier from an Xcode project object block.
-public func xcodeObjectID(from object: String) -> String? {
+static func xcodeObjectID(from object: String) -> String? {
     object.split(separator: "=", maxSplits: 1).first?
         .trimmingCharacters(in: .whitespacesAndNewlines)
         .split(separator: " ")
         .first
         .map(String.init)
+}
 }

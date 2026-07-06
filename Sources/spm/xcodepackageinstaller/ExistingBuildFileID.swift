@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Finds an existing build file identifier for a product dependency.
-public func existingBuildFileID(inXcodeProject project: String, productDependencyID: String) -> String? {
+static func existingBuildFileID(inXcodeProject project: String, productDependencyID: String) -> String? {
     xcodeObjectRanges(containing: "isa = PBXBuildFile;", in: project)
         .compactMap { range -> String? in
             let object = String(project[range])
@@ -23,4 +24,5 @@ public func existingBuildFileID(inXcodeProject project: String, productDependenc
             return xcodeObjectID(from: object)
         }
         .first
+}
 }

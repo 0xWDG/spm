@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Extracts the first inline Xcode object comment from an object block.
-public func xcodeObjectComment(from object: String) -> String? {
+static func xcodeObjectComment(from object: String) -> String? {
     guard let start = object.range(of: "/*"),
           let end = object.range(of: "*/", range: start.upperBound..<object.endIndex)
     else {
@@ -21,4 +22,5 @@ public func xcodeObjectComment(from object: String) -> String? {
 
     return String(object[start.upperBound..<end.lowerBound])
         .trimmingCharacters(in: .whitespacesAndNewlines)
+}
 }

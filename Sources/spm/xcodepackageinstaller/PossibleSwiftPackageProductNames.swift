@@ -11,21 +11,12 @@
 
 import Foundation
 
+public extension spm {
 /// Returns likely product names for a package when the manifest cannot be inspected.
-public func possibleSwiftPackageProductNames(from packageName: String) -> [String] {
+static func possibleSwiftPackageProductNames(from packageName: String) -> [String] {
     let withoutSwiftPrefix = packageName.hasPrefix("swift-")
         ? String(packageName.dropFirst("swift-".count))
         : packageName
-    let separators = CharacterSet(charactersIn: "-_")
-
-    /// Converts a dashed or underscored package name into PascalCase.
-    func pascalCase(_ value: String) -> String {
-        value
-            .components(separatedBy: separators)
-            .filter { !$0.isEmpty }
-            .map { $0.prefix(1).uppercased() + $0.dropFirst() }
-            .joined()
-    }
 
     return Array(Set([
         packageName,
@@ -33,4 +24,16 @@ public func possibleSwiftPackageProductNames(from packageName: String) -> [Strin
         pascalCase(packageName),
         pascalCase(withoutSwiftPrefix)
     ])).filter { !$0.isEmpty }
+}
+
+/// Converts a dashed or underscored package name into PascalCase.
+static func pascalCase(_ value: String) -> String {
+    let separators = CharacterSet(charactersIn: "-_")
+
+    return value
+        .components(separatedBy: separators)
+        .filter { !$0.isEmpty }
+        .map { $0.prefix(1).uppercased() + $0.dropFirst() }
+        .joined()
+}
 }

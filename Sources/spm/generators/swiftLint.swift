@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Generates a .swiftlint.yml file from configured or built-in SwiftLint rules.
-public func generateSwiftLint() {
+static func generateSwiftLint() {
     let configuration = activeConfiguration()
     let defaultSwiftLint = """
 excluded:
@@ -45,4 +46,5 @@ opt_in_rules:
     } catch {
         printC("Failed to generate .swiftlint.yml", color: CLIColors.red)
     }
+}
 }

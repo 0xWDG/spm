@@ -11,9 +11,13 @@
 
 import Foundation
 
-public nonisolated(unsafe) let fileManager = FileManager.default
+/// Shared file manager used by command helpers.
+nonisolated(unsafe) public let fileManager = FileManager.default
 
-public nonisolated(unsafe) var internalProductName: String?
+/// Cached package product name set by command-line operations.
+nonisolated(unsafe) public var internalProductName: String?
+
+/// Current package product name, inferred from Package.swift when not explicitly set.
 public var productName: String {
     get {
         if let productName = internalProductName {
@@ -22,14 +26,14 @@ public var productName: String {
 
         if fileManager.fileExists(atPath: "Package.swift") {
             guard let package = try? String(contentsOf: URL(fileURLWithPath: "Package.swift"), encoding: .utf8),
-                  let productName = packageName(from: package) else {
-                printC("Could not find product name in Package.swift", color: CLIColors.red)
+                  let productName = spm.packageName(from: package) else {
+                spm.printC("Could not find product name in Package.swift", color: CLIColors.red)
                 exit(2)
             }
 
             return productName
         } else {
-            printC("Package.swift not found, please provide package name", color: CLIColors.red)
+            spm.printC("Package.swift not found, please provide package name", color: CLIColors.red)
             return ""
         }
     }
@@ -38,8 +42,9 @@ public var productName: String {
     }
 }
 
+public extension spm {
 /// Extracts the package name from a Package.swift manifest.
-public func packageName(from manifest: String) -> String? {
+static func packageName(from manifest: String) -> String? {
     guard let regularExpression = try? NSRegularExpression(pattern: #"name\s*:\s*"([^"]+)""#) else {
         return nil
     }
@@ -51,4 +56,5 @@ public func packageName(from manifest: String) -> String? {
     }
 
     return String(manifest[nameRange])
+}
 }

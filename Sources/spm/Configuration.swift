@@ -11,16 +11,27 @@
 
 import Foundation
 
+/// Stored JSON configuration for generated package files and author metadata.
 public struct SPMConfiguration: Codable {
+    /// Custom README content or a path to a README template.
     public var readme: String?
+    /// Custom LICENCE content or a path to a licence template.
     public var licence: String?
+    /// Custom Swift file header content or a path to a header template.
     public var swiftFileHeader: String?
+    /// Custom .editorconfig content or a path to a template.
     public var editorconfig: String?
+    /// Custom .gitignore content or a path to a template.
     public var gitignore: String?
+    /// Custom SwiftLint rules or a path to a template.
     public var swiftLintRules: String?
+    /// Author name used in headers and licence templates.
     public var name: String?
+    /// Author email used in licence templates.
     public var email: String?
+    /// Website used in generated templates.
     public var website: String?
+    /// GitHub username used in generated templates.
     public var github: String?
 
     /// Creates an SPM configuration.
@@ -48,70 +59,34 @@ public struct SPMConfiguration: Codable {
         self.github = github
     }
 
+    /// Author name with the built-in default applied.
     public var configuredName: String {
         name?.nilIfEmpty ?? "Wesley de Groot"
     }
 
+    /// Author email with the built-in default applied.
     public var configuredEmail: String {
         email?.nilIfEmpty ?? "email@WesleydeGroot.nl"
     }
 
+    /// Website with the built-in default applied.
     public var configuredWebsite: String {
         website?.nilIfEmpty ?? "https://wesleydegroot.nl"
     }
 
+    /// GitHub username with the built-in default applied.
     public var configuredgithub: String {
         github?.nilIfEmpty ?? "0xWDG"
     }
 
-    /// Returns a configuration where non-nil values from another configuration override this one.
-    public func merged(with overridingConfiguration: SPMConfiguration) -> SPMConfiguration {
-        SPMConfiguration(
-            readme: overridingConfiguration.readme ?? readme,
-            licence: overridingConfiguration.licence ?? licence,
-            swiftFileHeader: overridingConfiguration.swiftFileHeader ?? swiftFileHeader,
-            editorconfig: overridingConfiguration.editorconfig ?? editorconfig,
-            gitignore: overridingConfiguration.gitignore ?? gitignore,
-            swiftLintRules: overridingConfiguration.swiftLintRules ?? swiftLintRules,
-            name: overridingConfiguration.name ?? name,
-            email: overridingConfiguration.email ?? email,
-            website: overridingConfiguration.website ?? website,
-            github: overridingConfiguration.github ?? github
-        )
-    }
-
-    /// Sets a configuration value by its command-line key.
-    public mutating func set(_ key: String, value: String) throws {
-        switch key {
-        case "readme":
-            readme = value
-        case "licence":
-            licence = value
-        case "swiftFileHeader":
-            swiftFileHeader = value
-        case "editorconfig":
-            editorconfig = value
-        case "gitignore":
-            gitignore = value
-        case "swiftLintRules":
-            swiftLintRules = value
-        case "name":
-            name = value
-        case "email":
-            email = value
-        case "website":
-            website = value
-        case "github":
-            github = value
-        default:
-            throw ConfigurationError.unknownKey(key)
-        }
-    }
 }
 
+/// Errors raised while reading or updating configuration.
 public enum ConfigurationError: Error, CustomStringConvertible {
+    /// A requested configuration key is not supported.
     case unknownKey(String)
 
+    /// Human-readable error description.
     public var description: String {
         switch self {
         case .unknownKey(let key):
@@ -120,11 +95,15 @@ public enum ConfigurationError: Error, CustomStringConvertible {
     }
 }
 
+/// Defines whether configuration is stored locally or globally.
 public enum ConfigurationScope {
+    /// Project-local configuration in `.spm/config.json`.
     case local
+    /// User-global configuration in `~/.config/spm/config.json`.
     case global
 }
 
+/// Supported command-line configuration keys.
 public let supportedConfigurationKeys = [
     "readme",
     "licence",
@@ -138,21 +117,35 @@ public let supportedConfigurationKeys = [
     "github"
 ]
 
+private let configurationKeyPaths: [String: WritableKeyPath<SPMConfiguration, String?>] = [
+    "readme": \.readme,
+    "licence": \.licence,
+    "swiftFileHeader": \.swiftFileHeader,
+    "editorconfig": \.editorconfig,
+    "gitignore": \.gitignore,
+    "swiftLintRules": \.swiftLintRules,
+    "name": \.name,
+    "email": \.email,
+    "website": \.website,
+    "github": \.github
+]
+
+public extension spm {
 /// Returns the local project configuration directory.
-public func localConfigurationDirectory() -> URL {
+static func localConfigurationDirectory() -> URL {
     URL(fileURLWithPath: fileManager.currentDirectoryPath)
         .appendingPathComponent(".spm", isDirectory: true)
 }
 
 /// Returns the global user configuration directory.
-public func globalConfigurationDirectory() -> URL {
+static func globalConfigurationDirectory() -> URL {
     fileManager.homeDirectoryForCurrentUser
         .appendingPathComponent(".config", isDirectory: true)
         .appendingPathComponent("spm", isDirectory: true)
 }
 
 /// Returns the configuration directory for the requested scope.
-public func configurationDirectory(for scope: ConfigurationScope) -> URL {
+static func configurationDirectory(for scope: ConfigurationScope) -> URL {
     switch scope {
     case .local:
         return localConfigurationDirectory()
@@ -162,12 +155,12 @@ public func configurationDirectory(for scope: ConfigurationScope) -> URL {
 }
 
 /// Returns the JSON configuration file URL for the requested scope.
-public func configurationFileURL(for scope: ConfigurationScope) -> URL {
+static func configurationFileURL(for scope: ConfigurationScope) -> URL {
     configurationDirectory(for: scope).appendingPathComponent("config.json")
 }
 
 /// Reads and decodes a configuration file from disk.
-public func readConfiguration(from url: URL) -> SPMConfiguration? {
+static func readConfiguration(from url: URL) -> SPMConfiguration? {
     guard let data = try? Data(contentsOf: url) else {
         return nil
     }
@@ -176,14 +169,14 @@ public func readConfiguration(from url: URL) -> SPMConfiguration? {
 }
 
 /// Returns the effective configuration by merging global and local settings.
-public func activeConfiguration() -> SPMConfiguration {
+static func activeConfiguration() -> SPMConfiguration {
     let global = readConfiguration(from: configurationFileURL(for: .global)) ?? SPMConfiguration()
     let local = readConfiguration(from: configurationFileURL(for: .local)) ?? SPMConfiguration()
-    return global.merged(with: local)
+    return mergedConfiguration(global, with: local)
 }
 
 /// Returns the built-in default identity configuration.
-public func defaultConfiguration() -> SPMConfiguration {
+static func defaultConfiguration() -> SPMConfiguration {
     SPMConfiguration(
         name: "Wesley de Groot",
         email: "email@WesleydeGroot.nl",
@@ -192,8 +185,36 @@ public func defaultConfiguration() -> SPMConfiguration {
     )
 }
 
+/// Returns a configuration where non-nil values from another configuration override the base configuration.
+static func mergedConfiguration(
+    _ configuration: SPMConfiguration,
+    with overridingConfiguration: SPMConfiguration
+) -> SPMConfiguration {
+    SPMConfiguration(
+        readme: overridingConfiguration.readme ?? configuration.readme,
+        licence: overridingConfiguration.licence ?? configuration.licence,
+        swiftFileHeader: overridingConfiguration.swiftFileHeader ?? configuration.swiftFileHeader,
+        editorconfig: overridingConfiguration.editorconfig ?? configuration.editorconfig,
+        gitignore: overridingConfiguration.gitignore ?? configuration.gitignore,
+        swiftLintRules: overridingConfiguration.swiftLintRules ?? configuration.swiftLintRules,
+        name: overridingConfiguration.name ?? configuration.name,
+        email: overridingConfiguration.email ?? configuration.email,
+        website: overridingConfiguration.website ?? configuration.website,
+        github: overridingConfiguration.github ?? configuration.github
+    )
+}
+
+/// Sets a configuration value by its command-line key.
+static func setConfigurationField(_ configuration: inout SPMConfiguration, key: String, value: String) throws {
+    guard let keyPath = configurationKeyPaths[key] else {
+        throw ConfigurationError.unknownKey(key)
+    }
+
+    configuration[keyPath: keyPath] = value
+}
+
 /// Encodes and writes a configuration file for the requested scope.
-public func writeConfiguration(_ configuration: SPMConfiguration, scope: ConfigurationScope) throws {
+static func writeConfiguration(_ configuration: SPMConfiguration, scope: ConfigurationScope) throws {
     let directory = configurationDirectory(for: scope)
     try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
 
@@ -204,7 +225,7 @@ public func writeConfiguration(_ configuration: SPMConfiguration, scope: Configu
 }
 
 /// Creates a configuration file for the requested scope if needed.
-public func initializeConfiguration(scope: ConfigurationScope) {
+static func initializeConfiguration(scope: ConfigurationScope) {
     let existing = readConfiguration(from: configurationFileURL(for: scope)) ?? defaultConfiguration()
 
     do {
@@ -217,8 +238,8 @@ public func initializeConfiguration(scope: ConfigurationScope) {
 }
 
 /// Prints the effective configuration as formatted JSON.
-public func showConfiguration() {
-    let configuration = defaultConfiguration().merged(with: activeConfiguration())
+static func showConfiguration() {
+    let configuration = mergedConfiguration(defaultConfiguration(), with: activeConfiguration())
     let encoder = JSONEncoder()
     encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
@@ -233,11 +254,11 @@ public func showConfiguration() {
 }
 
 /// Updates one configuration value in the requested scope.
-public func setConfigurationValue(key: String, value: String, scope: ConfigurationScope) {
+static func setConfigurationValue(key: String, value: String, scope: ConfigurationScope) {
     var configuration = readConfiguration(from: configurationFileURL(for: scope)) ?? SPMConfiguration()
 
     do {
-        try configuration.set(key, value: value)
+        try setConfigurationField(&configuration, key: key, value: value)
         try writeConfiguration(configuration, scope: scope)
         printC("Set \(key) in \(configurationFileURL(for: scope).path)", color: CLIColors.green)
     } catch {
@@ -248,7 +269,7 @@ public func setConfigurationValue(key: String, value: String, scope: Configurati
 }
 
 /// Resolves configured template content from an inline value, explicit path, or default file names.
-public func configurationValueContent(_ value: String?, fileNames: [String]) -> String? {
+static func configurationValueContent(_ value: String?, fileNames: [String]) -> String? {
     let searchDirectories = [
         localConfigurationDirectory(),
         globalConfigurationDirectory()
@@ -283,7 +304,7 @@ public func configurationValueContent(_ value: String?, fileNames: [String]) -> 
 }
 
 /// Replaces supported placeholders in a template with package and configuration values.
-public func renderTemplate(_ template: String, configuration: SPMConfiguration, filename: String? = nil) -> String {
+static func renderTemplate(_ template: String, configuration: SPMConfiguration, filename: String? = nil) -> String {
     let replacements = [
         "PACKAGENAME": productName,
         "{{packageName}}": productName,
@@ -300,11 +321,15 @@ public func renderTemplate(_ template: String, configuration: SPMConfiguration, 
     }
 }
 
+}
+
 public extension String {
+    /// Returns nil when the string is empty.
     var nilIfEmpty: String? {
         isEmpty ? nil : self
     }
 
+    /// Expands a leading tilde in a filesystem path.
     var expandingTildeInPath: String {
         NSString(string: self).expandingTildeInPath
     }

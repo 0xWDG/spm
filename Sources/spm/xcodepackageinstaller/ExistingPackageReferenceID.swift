@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Finds an existing package reference identifier for a package URL.
-public func existingPackageReferenceID(inXcodeProject project: String, packageURL: String) -> String? {
+static func existingPackageReferenceID(inXcodeProject project: String, packageURL: String) -> String? {
     xcodeObjectRanges(containing: "isa = XCRemoteSwiftPackageReference;", in: project)
         .compactMap { range -> String? in
             let object = String(project[range])
@@ -25,4 +26,5 @@ public func existingPackageReferenceID(inXcodeProject project: String, packageUR
             return xcodeObjectID(from: object)
         }
         .first
+}
 }

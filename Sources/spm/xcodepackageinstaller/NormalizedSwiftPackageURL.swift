@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Converts shorthand package input into a usable package URL.
-public func normalizedSwiftPackageURL(from input: String) -> String {
+static func normalizedSwiftPackageURL(from input: String) -> String {
     let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
 
     if trimmed.contains("://") || trimmed.hasPrefix("git@") || trimmed.hasPrefix("ssh://") {
@@ -40,4 +41,5 @@ public func normalizedSwiftPackageURL(from input: String) -> String {
     }
 
     return trimmed
+}
 }

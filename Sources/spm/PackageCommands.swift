@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Creates and bootstraps a Swift package with the project defaults.
-public func createPackage(named name: String) {
+static func createPackage(named name: String) {
     productName = name
 
     if !fileManager.fileExists(atPath: "Package.swift") {
@@ -74,82 +75,21 @@ builder:
 }
 
 /// Builds the package for platforms detected in Package.swift.
-public func buildPackageForDetectedPlatforms() {
+static func buildPackageForDetectedPlatforms() {
     if !fileManager.fileExists(atPath: "Package.swift") {
         printC("Package.swift not found", color: CLIColors.red)
         exit(2)
     }
 
     let package = (try? String(contentsOf: URL(fileURLWithPath: "Package.swift"), encoding: .utf8)) ?? ""
-    var platforms: [String] = []
-    var fails = 0
-
-    if package.contains(".iOS") {
-        platforms.append("iOS")
-    }
-
-    if package.contains(".macOS") {
-        platforms.append("macOS")
-    }
-
-    if package.contains(".watchOS") {
-        platforms.append("watchOS")
-    }
-
-    if package.contains(".visionOS") {
-        platforms.append("xrOS")
-    }
-
-    if package.contains(".tvOS") {
-        platforms.append("tvOS")
-    }
-
-    if package.contains(".maccatalyst") {
-        platforms.append("MacCatalyst")
-    }
-
-    if package.contains(".driverkit") {
-        printC("DriverKit is not supported, skipped", color: CLIColors.orange)
-    }
-
-    if package.contains(".linux") {
-        printC("Linux is not supported, skipped", color: CLIColors.orange)
-    }
-
-    if package.contains(".android") {
-        printC("Android is not supported, skipped", color: CLIColors.orange)
-    }
-
-    if platforms.isEmpty {
-        printC("No platforms found in Package.swift, defaulting to all", color: CLIColors.orange)
-        platforms = ["iOS", "tvOS", "xrOS", "watchOS", "macOS"]
-    }
+    let platforms = detectedBuildPlatforms(in: package)
 
     printC("Build \(productName) for \(platforms.joined(separator: ", "))...")
 
-    for (number, platform) in platforms.enumerated() {
-        printC("Building \(productName) on \(platform). (\(number + 1)/\(platforms.count))", terminator: "\r")
-        let process = Process()
-        process.launchPath = "/usr/bin/env"
-        process.arguments = [
-            "xcrun",
-            "xcodebuild",
-            "clean",
-            "build",
-            "-quiet",
-            "-scheme", productName,
-            "-destination", "generic/platform=\(platform)"
-        ]
-        process.launch()
-        process.waitUntilExit()
-
-        if process.terminationStatus != 0 {
-            fails += 1
-            printC("Failed to build for \(platform) (\(number + 1)/\(platforms.count))", color: CLIColors.red)
-        } else {
-            printC("Build for \(platform) successful (\(number + 1)/\(platforms.count)) ", color: CLIColors.green)
-        }
-    }
+    let fails = platforms
+        .enumerated()
+        .filter { !buildPackage(platform: $0.element, number: $0.offset, total: platforms.count) }
+        .count
 
     if fails > 0 {
         printC("Failed to build for \(fails) platforms", color: CLIColors.red)
@@ -158,8 +98,72 @@ public func buildPackageForDetectedPlatforms() {
     }
 }
 
+/// Returns supported build platforms detected in a package manifest.
+static func detectedBuildPlatforms(in package: String) -> [String] {
+    let supportedPlatforms = [
+        (marker: ".iOS", platform: "iOS"),
+        (marker: ".macOS", platform: "macOS"),
+        (marker: ".watchOS", platform: "watchOS"),
+        (marker: ".visionOS", platform: "xrOS"),
+        (marker: ".tvOS", platform: "tvOS"),
+        (marker: ".maccatalyst", platform: "MacCatalyst")
+    ]
+    let platforms = supportedPlatforms
+        .filter { package.contains($0.marker) }
+        .map(\.platform)
+
+    printUnsupportedPlatforms(in: package)
+
+    if platforms.isEmpty {
+        printC("No platforms found in Package.swift, defaulting to all", color: CLIColors.orange)
+        return ["iOS", "tvOS", "xrOS", "watchOS", "macOS"]
+    }
+
+    return platforms
+}
+
+/// Prints unsupported package platforms detected in the package manifest.
+static func printUnsupportedPlatforms(in package: String) {
+    let unsupportedPlatforms = [
+        (marker: ".driverkit", name: "DriverKit"),
+        (marker: ".linux", name: "Linux"),
+        (marker: ".android", name: "Android")
+    ]
+
+    unsupportedPlatforms
+        .filter { package.contains($0.marker) }
+        .forEach { printC("\($0.name) is not supported, skipped", color: CLIColors.orange) }
+}
+
+/// Builds one package platform and returns whether it succeeded.
+static func buildPackage(platform: String, number: Int, total: Int) -> Bool {
+    printC("Building \(productName) on \(platform). (\(number + 1)/\(total))", terminator: "\r")
+
+    let process = Process()
+    process.launchPath = "/usr/bin/env"
+    process.arguments = [
+        "xcrun",
+        "xcodebuild",
+        "clean",
+        "build",
+        "-quiet",
+        "-scheme", productName,
+        "-destination", "generic/platform=\(platform)"
+    ]
+    process.launch()
+    process.waitUntilExit()
+
+    if process.terminationStatus == 0 {
+        printC("Build for \(platform) successful (\(number + 1)/\(total)) ", color: CLIColors.green)
+        return true
+    }
+
+    printC("Failed to build for \(platform) (\(number + 1)/\(total))", color: CLIColors.red)
+    return false
+}
+
 /// Runs `swift test` with any forwarded test arguments.
-public func testSwiftPackage(arguments: [String]) {
+static func testSwiftPackage(arguments: [String]) {
     if !fileManager.fileExists(atPath: "Package.swift") {
         printC("Package.swift not found", color: CLIColors.red)
         exit(2)
@@ -182,7 +186,7 @@ public func testSwiftPackage(arguments: [String]) {
 }
 
 /// Builds static web documentation with DocC.
-public func buildDocumentation(arguments: [String]) {
+static func buildDocumentation(arguments: [String]) {
     if !fileManager.fileExists(atPath: "Package.swift") {
         printC("Package.swift not found", color: CLIColors.red)
         exit(2)
@@ -197,6 +201,25 @@ public func buildDocumentation(arguments: [String]) {
     let fallbackCatalog = scratchDirectory.appendingPathComponent("\(options.target).docc", isDirectory: true)
     let catalog = documentationCatalog(for: options.target) ?? fallbackCatalog
 
+    prepareDocumentationDirectories(
+        scratchDirectory: scratchDirectory,
+        symbolGraphDirectory: symbolGraphDirectory,
+        fallbackCatalog: fallbackCatalog
+    )
+    buildDocumentationSymbolGraphs(options: options, symbolGraphDirectory: symbolGraphDirectory)
+    convertDocumentation(
+        options: options,
+        catalog: catalog,
+        symbolGraphDirectory: symbolGraphDirectory
+    )
+}
+
+/// Prepares the temporary directories used to build documentation.
+static func prepareDocumentationDirectories(
+    scratchDirectory: URL,
+    symbolGraphDirectory: URL,
+    fallbackCatalog: URL
+) {
     do {
         try fileManager.removeItem(at: scratchDirectory)
     } catch CocoaError.fileNoSuchFile {
@@ -212,7 +235,10 @@ public func buildDocumentation(arguments: [String]) {
         printC("Failed to prepare documentation directories: \(error)", color: CLIColors.red)
         exit(3)
     }
+}
 
+/// Builds symbol graphs for DocC conversion.
+static func buildDocumentationSymbolGraphs(options: DocumentationOptions, symbolGraphDirectory: URL) {
     printC("Generating symbol graphs for \(options.target)...")
     let symbolGraphStatus = runProcess(
         launchPath: "/usr/bin/env",
@@ -230,7 +256,14 @@ public func buildDocumentation(arguments: [String]) {
         printC("Failed to generate symbol graphs", color: CLIColors.red)
         exit(symbolGraphStatus)
     }
+}
 
+/// Converts symbol graphs and the documentation catalog into static web documentation.
+static func convertDocumentation(
+    options: DocumentationOptions,
+    catalog: URL,
+    symbolGraphDirectory: URL
+) {
     printC("Building static documentation in \(options.outputPath)...")
     let doccStatus = runProcess(
         launchPath: "/usr/bin/xcrun",
@@ -257,12 +290,15 @@ public func buildDocumentation(arguments: [String]) {
 }
 
 /// Compiles all source files into a local executable named `spm`.
-public func compileExecutable() {
+static func compileExecutable() {
     let sourceDirectory = URL(fileURLWithPath: "Sources/spm")
-    guard let sources = try? fileManager.contentsOfDirectory(
+    let packageSources = try? fileManager.contentsOfDirectory(
         at: sourceDirectory,
         includingPropertiesForKeys: nil
-    ).filter({ $0.pathExtension == "swift" }).sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) else {
+    )
+    guard let sources = packageSources?
+        .filter({ $0.pathExtension == "swift" })
+        .sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) else {
         printC("Failed to find Sources/spm/*.swift", color: CLIColors.red)
         exit(4)
     }
@@ -281,83 +317,4 @@ public func compileExecutable() {
     }
 }
 
-/// Parsed options for the documentation command.
-public struct DocumentationOptions {
-    public let target: String
-    public let outputPath: String
-    public let hostingBasePath: String
-
-    /// Creates documentation build options.
-    public init(target: String, outputPath: String, hostingBasePath: String) {
-        self.target = target
-        self.outputPath = outputPath
-        self.hostingBasePath = hostingBasePath
-    }
-}
-
-/// Parses documentation command arguments into build options.
-public func documentationOptions(from arguments: [String]) -> DocumentationOptions {
-    var target = productName
-    var outputPath = "docs"
-    var hostingBasePath = "/\(productName)"
-    var index = 0
-
-    while index < arguments.count {
-        let argument = arguments[index]
-
-        switch argument {
-        case "--target":
-            target = documentationOptionValue(arguments, at: index, option: argument)
-            index += 2
-        case "--output-path", "--output", "-o":
-            outputPath = documentationOptionValue(arguments, at: index, option: argument)
-            index += 2
-        case "--hosting-base-path", "--base-path":
-            hostingBasePath = documentationOptionValue(arguments, at: index, option: argument)
-            index += 2
-        default:
-            printC("Unknown documentation option: \(argument)", color: CLIColors.red)
-            print("Usage: \(CommandLine.arguments[0]) documentation [--target <target>] [--output-path <path>] [--hosting-base-path <path>]")
-            exit(1)
-        }
-    }
-
-    return DocumentationOptions(
-        target: target,
-        outputPath: outputPath,
-        hostingBasePath: hostingBasePath
-    )
-}
-
-/// Returns the value that follows a documentation command option.
-public func documentationOptionValue(_ arguments: [String], at index: Int, option: String) -> String {
-    let valueIndex = index + 1
-    guard valueIndex < arguments.count else {
-        printC("Missing value for \(option)", color: CLIColors.red)
-        exit(1)
-    }
-
-    return arguments[valueIndex]
-}
-
-/// Finds a documentation catalog for a target if the package provides one.
-public func documentationCatalog(for target: String) -> URL? {
-    let candidates = [
-        URL(fileURLWithPath: "Sources").appendingPathComponent(target).appendingPathComponent("\(target).docc"),
-        URL(fileURLWithPath: "Sources").appendingPathComponent(target).appendingPathComponent("Documentation.docc"),
-        URL(fileURLWithPath: "Documentation.docc"),
-        URL(fileURLWithPath: "\(target).docc")
-    ]
-
-    return candidates.first { fileManager.fileExists(atPath: $0.path) }
-}
-
-/// Runs a process attached to the current standard streams and returns its exit status.
-public func runProcess(launchPath: String, arguments: [String]) -> Int32 {
-    let process = Process()
-    process.launchPath = launchPath
-    process.arguments = arguments
-    process.launch()
-    process.waitUntilExit()
-    return process.terminationStatus
 }

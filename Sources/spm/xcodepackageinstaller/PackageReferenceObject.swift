@@ -11,14 +11,15 @@
 
 import Foundation
 
-/// Generates the string representation of an `XCRemoteSwiftPackageReference` object for inclusion in an Xcode project file.
+public extension spm {
+/// Generates an `XCRemoteSwiftPackageReference` object for inclusion in an Xcode project file.
 /// - Parameters:
 ///   - packageID: The unique identifier for the package reference.
 ///   - packageName: The name of the package.
 ///   - packageURL: The URL of the package repository.
 ///   - requirement: The version requirement for the package.
 /// - Returns: A string representing the `XCRemoteSwiftPackageReference` object.
-public func packageReferenceObject(
+static func packageReferenceObject(
     packageID: String,
     packageName: String,
     packageURL: String,
@@ -35,4 +36,5 @@ public func packageReferenceObject(
 \t\t};
 
 """
+}
 }

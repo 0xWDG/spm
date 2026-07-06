@@ -11,12 +11,18 @@
 
 import Foundation
 
+public extension spm {
 /// Adds a package reference entry to a PBXProject object.
-public func addPackageReferenceListEntry(projectObject: String, packageID: String, packageName: String) throws -> String {
+static func addPackageReferenceListEntry(
+    projectObject: String,
+    packageID: String,
+    packageName: String
+) throws -> String {
     let entry = "\t\t\t\t\(packageID) /* XCRemoteSwiftPackageReference \"\(packageName)\" */,"
 
     if let referencesRange = projectObject.range(of: "packageReferences = (") {
-        guard let closeRange = projectObject.range(of: "\n\t\t\t);", range: referencesRange.upperBound..<projectObject.endIndex) else {
+        let searchRange = referencesRange.upperBound..<projectObject.endIndex
+        guard let closeRange = projectObject.range(of: "\n\t\t\t);", range: searchRange) else {
             throw XcodePackageInstallerError.malformedProject("packageReferences list is missing its closing marker.")
         }
 
@@ -51,4 +57,5 @@ public func addPackageReferenceListEntry(projectObject: String, packageID: Strin
     var updated = projectObject
     updated.insert(contentsOf: insertion, at: closingRange.lowerBound)
     return updated
+}
 }

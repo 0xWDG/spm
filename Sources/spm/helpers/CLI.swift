@@ -37,8 +37,9 @@ public struct CLIColors {
     public static let underline = "\u{001B}[4m"
 }
 
+public extension spm {
 /// Prints the command-line usage and available commands.
-public func printUsage() {
+static func printUsage() {
     let executable = CommandLine.arguments[0].components(separatedBy: "/").last ?? "spm"
 
     print("spm - Swift Package Manager Manager (v0.0.2)\n")
@@ -53,7 +54,7 @@ public func printUsage() {
     print(" documentation [options] - Build web documentation with DocC")
     print(" test [swift-test-options] - Test the Swift package project")
     print(" --test [swift-test-options] - Test the Swift package project")
-    print(" install <package url|owner/repo|repo> - Install a Swift package into the Xcode project in the current directory")
+    print(" install <package url|owner/repo|repo> - Install a Swift package into the current Xcode project")
     print(" config init - Create local .spm/config.json")
     print(" config global init - Create global ~/.config/spm/config.json")
     print(" config show - Print the merged configuration")
@@ -66,11 +67,12 @@ public func printUsage() {
 }
 
 /// Prints colored terminal output and flushes when writing without a newline.
-public func printC(_ text: String, terminator: String = "\n", color: String = CLIColors.reset) {
+static func printC(_ text: String, terminator: String = "\n", color: String = CLIColors.reset) {
     if terminator == "\n" {
         print("\(color)\(text)                        \(CLIColors.reset)")
     } else {
         print("\(color)\(text)\(CLIColors.reset)", terminator: terminator)
         fflush(stdout)
     }
+}
 }

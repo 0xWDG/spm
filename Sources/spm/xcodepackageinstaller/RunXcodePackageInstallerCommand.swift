@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Runs a process and returns standard output when the command succeeds.
-public func runXcodePackageInstallerCommand(_ launchPath: String, _ arguments: [String]) throws -> String {
+static func runXcodePackageInstallerCommand(_ launchPath: String, _ arguments: [String]) throws -> String {
     let process = Process()
     let output = Pipe()
     let error = Pipe()
@@ -30,8 +31,10 @@ public func runXcodePackageInstallerCommand(_ launchPath: String, _ arguments: [
 
     guard process.terminationStatus == 0 else {
         let command = ([launchPath] + arguments).joined(separator: " ")
-        throw XcodePackageInstallerError.commandFailed("Command failed: \(command)\n\(stderr.isEmpty ? stdout : stderr)")
+        let message = "Command failed: \(command)\n\(stderr.isEmpty ? stdout : stderr)"
+        throw XcodePackageInstallerError.commandFailed(message)
     }
 
     return stdout
+}
 }

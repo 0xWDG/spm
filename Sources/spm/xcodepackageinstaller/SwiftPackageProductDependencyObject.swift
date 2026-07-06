@@ -11,8 +11,14 @@
 
 import Foundation
 
+public extension spm {
 /// Builds an XCSwiftPackageProductDependency object.
-public func swiftPackageProductDependencyObject(productDependencyID: String, packageID: String, packageName: String, productName: String) -> String {
+static func swiftPackageProductDependencyObject(
+    productDependencyID: String,
+    packageID: String,
+    packageName: String,
+    productName: String
+) -> String {
     """
 \t\t\(productDependencyID) /* \(productName) */ = {
 \t\t\tisa = XCSwiftPackageProductDependency;
@@ -21,4 +27,5 @@ public func swiftPackageProductDependencyObject(productDependencyID: String, pac
 \t\t};
 
 """
+}
 }

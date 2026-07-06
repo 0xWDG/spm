@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Generates an .editorconfig file from configured or built-in settings.
-public func generateEditorConfig() {
+static func generateEditorConfig() {
     let configuration = activeConfiguration()
     let defaultEditorConfig = """
 root = true
@@ -39,4 +40,5 @@ insert_final_newline = true
     } catch {
         printC("Failed to generate .editorconfig", color: CLIColors.red)
     }
+}
 }

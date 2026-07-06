@@ -11,9 +11,11 @@
 
 import Foundation
 
+public extension spm {
 /// Reads the default branch for a remote package URL.
-public func defaultBranch(forPackageURL packageURL: String) -> String? {
-    guard let output = try? runXcodePackageInstallerCommand("/usr/bin/git", ["ls-remote", "--symref", packageURL, "HEAD"]) else {
+static func defaultBranch(forPackageURL packageURL: String) -> String? {
+    let arguments = ["ls-remote", "--symref", packageURL, "HEAD"]
+    guard let output = try? runXcodePackageInstallerCommand("/usr/bin/git", arguments) else {
         return nil
     }
 
@@ -27,4 +29,5 @@ public func defaultBranch(forPackageURL packageURL: String) -> String? {
     }
 
     return nil
+}
 }

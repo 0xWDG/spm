@@ -17,64 +17,88 @@ import Foundation
 public struct spm { // swiftlint:disable:this type_name
     /// Starts the command-line application.
     public static func main() {
-        guard CommandLine.arguments.count >= 2 else {
+        run(arguments: CommandLine.arguments)
+    }
+}
+
+private extension spm {
+    private typealias CommandHandler = ([String]) -> Void
+
+    private static let commandHandlers: [String: CommandHandler] = [
+        "create": runCreateCommand,
+        "config": runConfigurationCommand,
+        "header": { _ in header() },
+        "readme": { _ in generateReadme() },
+        "editorconfig": { _ in generateEditorConfig() },
+        "licence": { _ in generateMITLicense() },
+        "gitignore": { _ in generateGitIgnore() },
+        "swiftlint": { _ in generateSwiftLint() },
+        "build": { _ in buildPackageForDetectedPlatforms() },
+        "--build": { _ in buildPackageForDetectedPlatforms() },
+        "-b": { _ in buildPackageForDetectedPlatforms() },
+        "documentation": runDocumentationCommand,
+        "docs": runDocumentationCommand,
+        "docc": runDocumentationCommand,
+        "test": runTestCommand,
+        "--test": runTestCommand,
+        "-t": runTestCommand,
+        "install": runInstallCommand,
+        "package-install": runInstallCommand,
+        "xcode-install": runInstallCommand,
+        "executable": { _ in compileExecutable() }
+    ]
+
+    private static func run(arguments: [String]) {
+        guard arguments.count >= 2 else {
             printUsage()
             exit(1)
         }
 
-        let command = CommandLine.arguments[1]
-
-        switch command {
-        case "create":
-            if CommandLine.arguments.count < 3 {
-                print("Usage: \(CommandLine.arguments[0]) create <package name>")
-                exit(1)
-            }
-            createPackage(named: CommandLine.arguments[2])
-        case "config":
-            runConfigurationCommand(arguments: CommandLine.arguments)
-        case "header":
-            header()
-        case "readme":
-            generateReadme()
-        case "editorconfig":
-            generateEditorConfig()
-        case "licence":
-            generateMITLicense()
-        case "gitignore":
-            generateGitIgnore()
-        case "swiftlint":
-            generateSwiftLint()
-        case "build", "--build", "-b":
-            buildPackageForDetectedPlatforms()
-        case "documentation", "docs", "docc":
-            buildDocumentation(arguments: Array(CommandLine.arguments.dropFirst(2)))
-        case "test", "--test", "-t":
-            testSwiftPackage(arguments: Array(CommandLine.arguments.dropFirst(2)))
-        case "install", "package-install", "xcode-install":
-            guard CommandLine.arguments.count == 3 else {
-                print("Usage: \(CommandLine.arguments[0]) \(command) <swift-package-url|owner/repo|repo>")
-                exit(1)
-            }
-
-            do {
-                try installSwiftPackageInXcodeProject(packageURL: CommandLine.arguments[2])
-                exit(0)
-            } catch {
-                printC("Error: \(error)", color: CLIColors.red)
-                exit(1)
-            }
-
-        case "executable":
-            compileExecutable()
-        default:
+        guard let handler = commandHandlers[arguments[1]] else {
             printUsage()
+            exit(1)
+        }
+
+        handler(arguments)
+    }
+
+    private static func runCreateCommand(arguments: [String]) {
+        guard arguments.count >= 3 else {
+            print("Usage: \(arguments[0]) create <package name>")
+            exit(1)
+        }
+
+        createPackage(named: arguments[2])
+    }
+
+    private static func runDocumentationCommand(arguments: [String]) {
+        buildDocumentation(arguments: Array(arguments.dropFirst(2)))
+    }
+
+    private static func runTestCommand(arguments: [String]) {
+        testSwiftPackage(arguments: Array(arguments.dropFirst(2)))
+    }
+
+    private static func runInstallCommand(arguments: [String]) {
+        let command = arguments[1]
+        guard arguments.count == 3 else {
+            print("Usage: \(arguments[0]) \(command) <swift-package-url|owner/repo|repo>")
+            exit(1)
+        }
+
+        do {
+            try installSwiftPackageInXcodeProject(packageURL: arguments[2])
+            exit(0)
+        } catch {
+            printC("Error: \(error)", color: CLIColors.red)
             exit(1)
         }
     }
+}
 
+public extension spm {
     /// Routes configuration subcommands to local or global configuration operations.
-    public static func runConfigurationCommand(arguments: [String]) {
+    static func runConfigurationCommand(arguments: [String]) {
         guard arguments.count >= 3 else {
             printUsage()
             exit(1)

@@ -11,10 +11,15 @@
 
 import Foundation
 
+public extension spm {
 /// Builds a PBXBuildFile object for a Swift package product dependency.
-public func buildFileObject(buildFileID: String, productDependencyID: String, productName: String) -> String {
+static func buildFileObject(buildFileID: String, productDependencyID: String, productName: String) -> String {
     """
-\t\t\(buildFileID) /* \(productName) in Frameworks */ = {isa = PBXBuildFile; productRef = \(productDependencyID) /* \(productName) */; };
+\t\t\(buildFileID) /* \(productName) in Frameworks */ = {
+\t\t\tisa = PBXBuildFile;
+\t\t\tproductRef = \(productDependencyID) /* \(productName) */;
+\t\t};
 
 """
+}
 }

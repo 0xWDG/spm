@@ -11,8 +11,9 @@
 
 import Foundation
 
+public extension spm {
 /// Finds all Xcode object ranges containing a marker.
-public func xcodeObjectRanges(containing marker: String, in text: String) -> [Range<String.Index>] {
+static func xcodeObjectRanges(containing marker: String, in text: String) -> [Range<String.Index>] {
     var ranges: [Range<String.Index>] = []
     var searchStart = text.startIndex
 
@@ -61,4 +62,5 @@ public func xcodeObjectRanges(containing marker: String, in text: String) -> [Ra
     }
 
     return ranges
+}
 }

@@ -11,8 +11,13 @@
 
 import Foundation
 
+public extension spm {
 /// Finds an existing Swift package product dependency identifier.
-public func existingProductDependencyID(inXcodeProject project: String, packageID: String, productName: String) -> String? {
+static func existingProductDependencyID(
+    inXcodeProject project: String,
+    packageID: String,
+    productName: String
+) -> String? {
     xcodeObjectRanges(containing: "isa = XCSwiftPackageProductDependency;", in: project)
         .compactMap { range -> String? in
             let object = String(project[range])
@@ -25,4 +30,5 @@ public func existingProductDependencyID(inXcodeProject project: String, packageI
             return xcodeObjectID(from: object)
         }
         .first
+}
 }
