@@ -15,6 +15,5 @@ let package = Package(
             name: "spmTests",
             dependencies: ["spm"]
         ),
-    ],
-    swiftLanguageModes: [.v6]
+    ]
 )
