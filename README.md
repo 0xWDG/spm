@@ -62,9 +62,10 @@ swift run spm executable
 ## Install
 
 After building a release binary, copy it somewhere on your `PATH`:
+or use the included install script to copy it to `/usr/local/bin` (requires `sudo` for write access):
 
 ```sh
-sudo cp .build/release/spm /usr/local/bin/spm
+sh ./build+install.sh
 ```
 
 Then run it from any Swift package directory:
