@@ -137,7 +137,9 @@ static func printUnsupportedPlatforms(in package: String) {
 
 /// Builds one package platform and returns whether it succeeded.
 static func buildPackage(platform: String, number: Int, total: Int) -> Bool {
-    printC("Building \(productName) on \(platform). (\(number + 1)/\(total))", terminator: "\r")
+    let current = number + 1
+    let progress = progressBar(current: current, total: total)
+    let message = "\(progress) Building \(productName) for \(platform)"
 
     let process = Process()
     process.launchPath = "/usr/bin/env"
@@ -150,15 +152,14 @@ static func buildPackage(platform: String, number: Int, total: Int) -> Bool {
         "-scheme", productName,
         "-destination", "generic/platform=\(platform)"
     ]
-    process.launch()
-    process.waitUntilExit()
+    let terminationStatus = runProcessWithSpinner(process, message: message)
 
-    if process.terminationStatus == 0 {
-        printC("Build for \(platform) successful (\(number + 1)/\(total)) ", color: CLIColors.green)
+    if terminationStatus == 0 {
+        printC("\(progress) Build for \(platform) successful", color: CLIColors.green)
         return true
     }
 
-    printC("Failed to build for \(platform) (\(number + 1)/\(total))", color: CLIColors.red)
+    printC("\(progress) Failed to build for \(platform)", color: CLIColors.red)
     return false
 }
 

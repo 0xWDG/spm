@@ -11,6 +11,11 @@
 
 import Foundation
 
+private final class CLIProgressState {
+    let lock = NSLock()
+    var isRunning = true
+}
+
 /// Colored terminal output
 public struct CLIColors {
     /// ANSI escape code for red text
@@ -74,5 +79,57 @@ static func printC(_ text: String, terminator: String = "\n", color: String = CL
         print("\(color)\(text)\(CLIColors.reset)", terminator: terminator)
         fflush(stdout)
     }
+}
+
+/// Returns a fixed-width progress bar for completed build platforms.
+static func progressBar(current: Int, total: Int, width: Int = 20) -> String {
+    guard total > 0 else {
+        return "[\(String(repeating: "-", count: width))] 0/0"
+    }
+
+    let clampedCurrent = min(max(current, 0), total)
+    let filledWidth = Int((Double(clampedCurrent) / Double(total)) * Double(width))
+    let emptyWidth = width - filledWidth
+    let filled = String(repeating: "#", count: filledWidth)
+    let empty = String(repeating: "-", count: emptyWidth)
+    return "[\(filled)\(empty)] \(clampedCurrent)/\(total)"
+}
+
+/// Runs a process while showing an indeterminate terminal spinner.
+static func runProcessWithSpinner(_ process: Process, message: String) -> Int32 {
+    let frames = ["-", "\\", "|", "/"]
+    let state = CLIProgressState()
+
+    process.launch()
+
+    DispatchQueue.global(qos: .userInitiated).async {
+        var frameIndex = 0
+        while true {
+            state.lock.lock()
+            let shouldContinue = state.isRunning
+            state.lock.unlock()
+
+            guard shouldContinue else {
+                break
+            }
+
+            printC("\(frames[frameIndex % frames.count]) \(message)", terminator: "\r")
+            frameIndex += 1
+            Thread.sleep(forTimeInterval: 0.12)
+        }
+    }
+
+    process.waitUntilExit()
+    state.lock.lock()
+    state.isRunning = false
+    state.lock.unlock()
+    clearCurrentLine()
+    return process.terminationStatus
+}
+
+/// Clears the current terminal line.
+static func clearCurrentLine(width: Int = 120) {
+    print("\r\(String(repeating: " ", count: width))\r", terminator: "")
+    fflush(stdout)
 }
 }
