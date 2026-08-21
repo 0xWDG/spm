@@ -6,12 +6,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: documentation
   cancel-in-progress: true
 
 jobs:
@@ -21,24 +19,12 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
       - name: Build documentation
         run: swift run spm documentation --target SPMCore --output-path docs --hosting-base-path /spm
 
-      - name: Upload documentation
-        uses: actions/upload-pages-artifact@v3
+      - name: Publish documentation
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: docs
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy documentation
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: documentation
+          publish_dir: docs
