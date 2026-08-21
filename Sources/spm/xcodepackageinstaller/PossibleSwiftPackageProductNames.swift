@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Returns likely product names for a package when the manifest cannot be inspected.
 static func possibleSwiftPackageProductNames(from packageName: String) -> [String] {
     let withoutSwiftPrefix = packageName.hasPrefix("swift-")

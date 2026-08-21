@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Extracts the first inline Xcode object comment from an object block.
 static func xcodeObjectComment(from object: String) -> String? {
     guard let start = object.range(of: "/*"),

@@ -11,30 +11,21 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Runs a process and returns standard output when the command succeeds.
 static func runXcodePackageInstallerCommand(_ launchPath: String, _ arguments: [String]) throws -> String {
-    let process = Process()
-    let output = Pipe()
-    let error = Pipe()
-
-    process.executableURL = URL(fileURLWithPath: launchPath)
-    process.arguments = arguments
-    process.standardOutput = output
-    process.standardError = error
-
-    try process.run()
-    process.waitUntilExit()
-
-    let stdout = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-    let stderr = String(data: error.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-
-    guard process.terminationStatus == 0 else {
+    let result = try ProcessRunner().run(
+        executable: launchPath,
+        arguments: arguments,
+        workingDirectory: SPMRuntime.current.workingDirectory
+    )
+    guard result.status == 0 else {
         let command = ([launchPath] + arguments).joined(separator: " ")
-        let message = "Command failed: \(command)\n\(stderr.isEmpty ? stdout : stderr)"
+        let details = result.standardError.isEmpty ? result.standardOutput : result.standardError
+        let message = "Command failed: \(command)\n\(details)"
         throw XcodePackageInstallerError.commandFailed(message)
     }
 
-    return stdout
+    return result.standardOutput
 }
 }

@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Finds an existing Swift package product dependency identifier.
 static func existingProductDependencyID(
     inXcodeProject project: String,

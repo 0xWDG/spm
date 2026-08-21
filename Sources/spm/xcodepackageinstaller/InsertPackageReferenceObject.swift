@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Inserts a Swift package reference object into an Xcode project file.
 static func insertPackageReferenceObject(
     into project: String,

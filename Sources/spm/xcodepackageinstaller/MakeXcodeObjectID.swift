@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Creates a unique 24-character Xcode project object identifier.
 static func makeXcodeObjectID(existingIn project: String) -> String {
     var id = ""

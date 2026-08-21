@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Finds an existing package reference identifier for a package URL.
 static func existingPackageReferenceID(inXcodeProject project: String, packageURL: String) -> String? {
     xcodeObjectRanges(containing: "isa = XCRemoteSwiftPackageReference;", in: project)

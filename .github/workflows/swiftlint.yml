@@ -1,16 +1,23 @@
-name: Run Swiftlint
+name: SwiftLint
+
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   swiftlint:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - name: SwiftLint
-        run: |
-          brew install swiftlint
-          swiftlint --reporter github-actions-logging --strict
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint Swift sources
+        run: swiftlint --strict --reporter github-actions-logging

@@ -11,23 +11,22 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Generates a README.md file from configured or built-in README content.
-static func generateReadme() {
-    let configuration = activeConfiguration()
+static func generateReadme(options: OverwriteOptions = OverwriteOptions()) throws {
+    _ = try requiredProductName()
+    let configuration = try activeConfiguration()
     let readme = renderTemplate(
-        configurationValueContent(
+        try configurationValueContent(
             configuration.readme,
             fileNames: ["README.md"]
         ) ?? defaultReadmeTemplate,
         configuration: configuration
     )
 
-    do {
-        try readme.write(to: URL(fileURLWithPath: "README.md"), atomically: true, encoding: .utf8)
+    try writeGeneratedFile(readme, to: projectURL("README.md"), options: options)
+    if !options.dryRun {
         printC("Generated README.md", color: CLIColors.green)
-    } catch {
-        printC("Failed to generate README.md", color: CLIColors.red)
     }
 }
 
@@ -65,7 +64,7 @@ static var defaultReadmeBody: String {
     """
     ## Requirements
 
-    - Swift 5.8+ (Xcode 15+)
+    - Swift 6.0+ (Xcode 16+)
     - iOS 16+, macOS 13+, watchOS 9+, tvOS 16+
 
     ## Installation (Package.swift)

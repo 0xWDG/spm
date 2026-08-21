@@ -12,7 +12,7 @@
 import Foundation
 
 /// Shared file manager used by command helpers.
-nonisolated(unsafe) public let fileManager = FileManager.default
+public var fileManager: FileManager { SPMRuntime.current.fileManager }
 
 /// Cached package product name set by command-line operations.
 nonisolated(unsafe) public var internalProductName: String?
@@ -24,25 +24,33 @@ public var productName: String {
             return productName
         }
 
-        if fileManager.fileExists(atPath: "Package.swift") {
-            guard let package = try? String(contentsOf: URL(fileURLWithPath: "Package.swift"), encoding: .utf8),
-                  let productName = spm.packageName(from: package) else {
-                spm.printC("Could not find product name in Package.swift", color: CLIColors.red)
-                exit(2)
-            }
-
-            return productName
-        } else {
-            spm.printC("Package.swift not found, please provide package name", color: CLIColors.red)
-            return ""
+        let manifestURL = SPM.projectURL("Package.swift")
+        if fileManager.fileExists(atPath: manifestURL.path) {
+            let package = try? String(contentsOf: manifestURL, encoding: .utf8)
+            return package.flatMap(SPM.packageName(from:)) ?? ""
         }
+
+        return ""
     }
     set {
         internalProductName = newValue
     }
 }
 
-public extension spm {
+public extension SPM {
+/// Returns the current package name or throws when it cannot be determined.
+static func requiredProductName() throws -> String {
+    guard !productName.isEmpty else {
+        if fileManager.fileExists(atPath: projectURL("Package.swift").path) {
+            throw SPMCommandError.failure("Could not find the package name in Package.swift.", exitCode: 2)
+        }
+
+        throw SPMCommandError.failure("Package.swift not found.", exitCode: 2)
+    }
+
+    return productName
+}
+
 /// Extracts the package name from a Package.swift manifest.
 static func packageName(from manifest: String) -> String? {
     guard let regularExpression = try? NSRegularExpression(pattern: #"name\s*:\s*"([^"]+)""#) else {

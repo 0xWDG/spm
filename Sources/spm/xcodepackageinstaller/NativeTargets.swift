@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Extracts native targets that can link Swift package products.
 static func nativeTargets(inXcodeProject project: String) -> [XcodeNativeTarget] {
     xcodeObjectRanges(containing: "isa = PBXNativeTarget;", in: project).compactMap { range in

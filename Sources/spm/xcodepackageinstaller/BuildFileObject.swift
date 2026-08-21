@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Builds a PBXBuildFile object for a Swift package product dependency.
 static func buildFileObject(buildFileID: String, productDependencyID: String, productName: String) -> String {
     """

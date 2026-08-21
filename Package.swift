@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8.0
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -8,15 +8,23 @@ let package = Package(
     platforms: [
         .macOS(.v13)
     ],
+    products: [
+        .library(name: "SPMCore", targets: ["SPMCore"]),
+        .executable(name: "spm", targets: ["spm"])
+    ],
     targets: [
-        // Targets are the basic building blocks of a package, defining a module or a test suite.
-        // Targets can depend on other targets in this package and products from dependencies.
+        .target(
+            name: "SPMCore",
+            path: "Sources/spm"
+        ),
         .executableTarget(
-            name: "spm"
+            name: "spm",
+            dependencies: ["SPMCore"],
+            path: "Sources/spmCLI"
         ),
         .testTarget(
             name: "spmTests",
-            dependencies: ["spm"]
+            dependencies: ["SPMCore"]
         )
     ]
 )

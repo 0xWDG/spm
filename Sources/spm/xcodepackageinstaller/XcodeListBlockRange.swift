@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Finds a named list block inside an Xcode project object.
 static func xcodeListBlockRange(named name: String, in object: String) -> Range<String.Index>? {
     guard let start = object.range(of: "\(name) = (") else { return nil }

@@ -11,10 +11,11 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Generates an .editorconfig file from configured or built-in settings.
-static func generateEditorConfig() {
-    let configuration = activeConfiguration()
+static func generateEditorConfig(options: OverwriteOptions = OverwriteOptions()) throws {
+    _ = try requiredProductName()
+    let configuration = try activeConfiguration()
     let defaultEditorConfig = """
 root = true
 
@@ -27,18 +28,16 @@ trim_trailing_whitespace = true
 insert_final_newline = true
 """
     let editorConfig = renderTemplate(
-        configurationValueContent(
+        try configurationValueContent(
             configuration.editorconfig,
             fileNames: ["editorconfig", ".editorconfig"]
         ) ?? defaultEditorConfig,
         configuration: configuration
     )
 
-    do {
-        try editorConfig.write(to: URL(fileURLWithPath: ".editorconfig"), atomically: true, encoding: .utf8)
+    try writeGeneratedFile(editorConfig, to: projectURL(".editorconfig"), options: options)
+    if !options.dryRun {
         printC("Generated .editorconfig", color: CLIColors.green)
-    } catch {
-        printC("Failed to generate .editorconfig", color: CLIColors.red)
     }
 }
 }

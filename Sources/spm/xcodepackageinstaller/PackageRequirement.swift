@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Chooses an Xcode package requirement from remote tags or the default branch.
 static func packageRequirement(forPackageURL packageURL: String) -> XcodePackageRequirement {
     let arguments = ["ls-remote", "--tags", "--refs", packageURL]

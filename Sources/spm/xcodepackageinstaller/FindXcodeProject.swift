@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Finds the single Xcode project in a directory.
 static func findXcodeProject(in directory: URL) throws -> URL {
     let contents = try fileManager.contentsOfDirectory(

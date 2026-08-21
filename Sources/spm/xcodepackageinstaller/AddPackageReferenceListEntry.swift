@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Adds a package reference entry to a PBXProject object.
 static func addPackageReferenceListEntry(
     projectObject: String,

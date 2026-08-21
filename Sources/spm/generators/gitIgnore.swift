@@ -11,23 +11,22 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Generates a .gitignore file from configured or built-in ignore rules.
-static func generateGitIgnore() {
-    let configuration = activeConfiguration()
+static func generateGitIgnore(options: OverwriteOptions = OverwriteOptions()) throws {
+    _ = try requiredProductName()
+    let configuration = try activeConfiguration()
     let gitIgnore = renderTemplate(
-        configurationValueContent(
+        try configurationValueContent(
             configuration.gitignore,
             fileNames: ["gitignore", ".gitignore"]
         ) ?? defaultGitIgnoreTemplate,
         configuration: configuration
     )
 
-    do {
-        try gitIgnore.write(to: URL(fileURLWithPath: ".gitignore"), atomically: true, encoding: .utf8)
+    try writeGeneratedFile(gitIgnore, to: projectURL(".gitignore"), options: options)
+    if !options.dryRun {
         printC("Generated .gitignore", color: CLIColors.green)
-    } catch {
-        printC("Failed to generate .gitignore", color: CLIColors.red)
     }
 }
 
@@ -76,6 +75,9 @@ static var defaultGitIgnoreTemplate: String {
     # hence it is not needed unless you have added a package configuration file to your project
     .swiftpm
     .build/
+
+    ### spm project configuration
+    .spm/config.json
 
     ### CocoaPods
     Pods/

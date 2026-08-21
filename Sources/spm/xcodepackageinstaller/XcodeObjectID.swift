@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Extracts the object identifier from an Xcode project object block.
 static func xcodeObjectID(from object: String) -> String? {
     object.split(separator: "=", maxSplits: 1).first?

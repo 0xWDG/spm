@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Inserts an Xcode object into an existing or newly created project section.
 static func insertXcodeObject(
     _ object: String,

@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Reads library product names from a remote package manifest, falling back to naming conventions.
 static func libraryProducts(forPackageURL packageURL: String, fallbackPackageName: String) -> [String] {
     let temporaryDirectory = URL(fileURLWithPath: NSTemporaryDirectory())

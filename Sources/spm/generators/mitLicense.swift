@@ -11,23 +11,22 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Generates a LICENCE.md file from configured or built-in license content.
-static func generateMITLicense() {
-    let configuration = activeConfiguration()
+static func generateMITLicense(options: OverwriteOptions = OverwriteOptions()) throws {
+    _ = try requiredProductName()
+    let configuration = try activeConfiguration()
     let license = renderTemplate(
-        configurationValueContent(
+        try configurationValueContent(
             configuration.licence,
             fileNames: ["LICENCE.md", "LICENSE.md"]
         ) ?? defaultMITLicense(configuration: configuration),
         configuration: configuration
     )
 
-    do {
-        try license.write(to: URL(fileURLWithPath: "LICENCE.md"), atomically: true, encoding: .utf8)
+    try writeGeneratedFile(license, to: projectURL("LICENCE.md"), options: options)
+    if !options.dryRun {
         printC("Generated LICENCE.md", color: CLIColors.green)
-    } catch {
-        printC("Failed to generate LICENCE.md", color: CLIColors.red)
     }
 }
 

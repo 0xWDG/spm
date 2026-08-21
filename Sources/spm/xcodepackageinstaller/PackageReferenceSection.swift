@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Generates an `XCRemoteSwiftPackageReference` section for inclusion in an Xcode project file.
 /// - Parameters:
 ///   - packageID: The unique identifier for the package reference.

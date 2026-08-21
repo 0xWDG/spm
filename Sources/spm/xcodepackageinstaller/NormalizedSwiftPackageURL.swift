@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Converts shorthand package input into a usable package URL.
 static func normalizedSwiftPackageURL(from input: String) -> String {
     let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)

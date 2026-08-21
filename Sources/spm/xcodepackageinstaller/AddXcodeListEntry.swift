@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Adds an entry to a named Xcode object list, creating the list when needed.
 static func addXcodeListEntry(object: String, listName: String, entry: String) throws -> String {
     if let blockRange = xcodeListBlockRange(named: listName, in: object) {

@@ -11,11 +11,31 @@
 
 import Foundation
 
-public extension spm {
+/// Options for linking a package into an Xcode project.
+public struct PackageInstallOptions: Equatable {
+    /// Requested native target names; empty selects all compatible targets.
+    public let targets: [String]
+    /// Requested library product names; empty selects all discovered products.
+    public let products: [String]
+    /// Previews the project diff without writing.
+    public let dryRun: Bool
+
+    /// Creates package installation options.
+    public init(targets: [String] = [], products: [String] = [], dryRun: Bool = false) {
+        self.targets = targets
+        self.products = products
+        self.dryRun = dryRun
+    }
+}
+
+public extension SPM {
 /// Installs and links a Swift package in the Xcode project in the current directory.
-static func installSwiftPackageInXcodeProject(packageURL packageInput: String) throws {
+static func installSwiftPackageInXcodeProject(
+    packageURL packageInput: String,
+    options: PackageInstallOptions = PackageInstallOptions()
+) throws {
     let packageURL = normalizedSwiftPackageURL(from: packageInput)
-    let currentDirectory = URL(fileURLWithPath: fileManager.currentDirectoryPath)
+    let currentDirectory = SPMRuntime.current.workingDirectory
     let projectURL = try findXcodeProject(in: currentDirectory)
     let pbxprojURL = projectURL.appendingPathComponent("project.pbxproj")
     var project = try String(contentsOf: pbxprojURL, encoding: .utf8)
@@ -24,12 +44,12 @@ static func installSwiftPackageInXcodeProject(packageURL packageInput: String) t
     let existingID = existingPackageReferenceID(inXcodeProject: project, packageURL: packageURL)
     let id = existingID ?? makeXcodeObjectID(existingIn: project)
     let resolvedRequirement = packageRequirement(forPackageURL: packageURL)
-    let targets = nativeTargets(inXcodeProject: project)
-    guard !targets.isEmpty else {
-        throw XcodePackageInstallerError.noLinkableTarget
-    }
-
-    let productNames = libraryProducts(forPackageURL: packageURL, fallbackPackageName: name)
+    let targets = try selectedTargets(in: project, requested: options.targets)
+    let productNames = try selectedProducts(
+        packageURL: packageURL,
+        packageName: name,
+        requested: options.products
+    )
 
     if existingID == nil {
         project = try addPackageReference(
@@ -48,10 +68,17 @@ static func installSwiftPackageInXcodeProject(packageURL packageInput: String) t
         productNames: productNames
     )
 
-    let backupURL = pbxprojURL.deletingLastPathComponent()
-        .appendingPathComponent("project.pbxproj.backup-\(Int(Date().timeIntervalSince1970))")
-    try fileManager.copyItem(at: pbxprojURL, to: backupURL)
-    try project.write(to: pbxprojURL, atomically: true, encoding: .utf8)
+    if options.dryRun {
+        let original = try String(contentsOf: pbxprojURL, encoding: .utf8)
+        print(unifiedDiff(original: original, updated: project, path: pbxprojURL.path))
+        return
+    }
+
+    let backups = try applyFileTransaction(
+        [FileChange(url: pbxprojURL, data: Data(project.utf8))],
+        createBackups: true
+    )
+    let backupURL = backups[0]
 
     printPackageInstallSuccess(
         name: name,
@@ -60,6 +87,35 @@ static func installSwiftPackageInXcodeProject(packageURL packageInput: String) t
         targets: targets,
         backupURL: backupURL
     )
+}
+
+/// Resolves requested target names against native targets in an Xcode project.
+private static func selectedTargets(in project: String, requested: [String]) throws -> [XcodeNativeTarget] {
+    let available = nativeTargets(inXcodeProject: project)
+    let missing = requested.filter { name in !available.contains { $0.name == name } }
+    guard missing.isEmpty else {
+        throw SPMCommandError.failure("Unknown Xcode target(s): \(missing.joined(separator: ", "))", exitCode: 2)
+    }
+    let selected = requested.isEmpty ? available : available.filter { requested.contains($0.name) }
+    guard !selected.isEmpty else { throw XcodePackageInstallerError.noLinkableTarget }
+    return selected
+}
+
+/// Resolves requested products against products published by a remote package.
+private static func selectedProducts(
+    packageURL: String,
+    packageName: String,
+    requested: [String]
+) throws -> [String] {
+    let available = libraryProducts(forPackageURL: packageURL, fallbackPackageName: packageName)
+    let missing = requested.filter { !available.contains($0) }
+    guard missing.isEmpty else {
+        throw SPMCommandError.failure(
+            "Unknown package product(s): \(missing.joined(separator: ", "))",
+            exitCode: 2
+        )
+    }
+    return requested.isEmpty ? available : available.filter { requested.contains($0) }
 }
 
 /// Adds a package reference to the PBXProject object and package reference section.

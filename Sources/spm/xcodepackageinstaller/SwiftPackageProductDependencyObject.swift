@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Builds an XCSwiftPackageProductDependency object.
 static func swiftPackageProductDependencyObject(
     productDependencyID: String,

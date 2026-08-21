@@ -1,0 +1,38 @@
+name: Homebrew
+
+on:
+  pull_request:
+    paths:
+      - packaging/homebrew/**
+      - scripts/render-homebrew-formula.sh
+      - .github/workflows/homebrew.yml
+  push:
+    branches: [main]
+    paths:
+      - packaging/homebrew/**
+      - scripts/render-homebrew-formula.sh
+      - .github/workflows/homebrew.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  formula:
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Render validation formula
+        run: scripts/render-homebrew-formula.sh 0.0.0 "$(printf '0%.0s' {1..64})"
+
+      - name: Check formula syntax
+        run: ruby -c build/homebrew/spm.rb
+
+      - name: Check Homebrew style
+        run: |
+          brew tap-new --no-git 0xwdg/spm-validation
+          tap_path="$(brew --repository 0xwdg/spm-validation)"
+          cp build/homebrew/spm.rb "$tap_path/Formula/spm.rb"
+          brew style 0xwdg/spm-validation

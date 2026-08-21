@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Finds the full Xcode object range for a specific object identifier.
 static func xcodeObjectRange(withID id: String, in text: String) -> Range<String.Index>? {
     guard let idRange = text.range(of: "\t\t\(id)") ?? text.range(of: "\n\t\t\(id)") else {

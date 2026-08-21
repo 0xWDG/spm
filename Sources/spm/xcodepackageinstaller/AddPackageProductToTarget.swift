@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Links a Swift package product dependency into a native target.
 static func addPackageProductToTarget(
     project: String,

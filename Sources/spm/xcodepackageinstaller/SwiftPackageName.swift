@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Derives a package name from a Swift package URL.
 static func swiftPackageName(from packageURL: String) -> String {
     let trimmed = packageURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))

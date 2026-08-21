@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Reads the default branch for a remote package URL.
 static func defaultBranch(forPackageURL packageURL: String) -> String? {
     let arguments = ["ls-remote", "--symref", packageURL, "HEAD"]

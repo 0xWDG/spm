@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Finds the full Xcode object range containing a marker.
 static func xcodeObjectRange(containing marker: String, in text: String) -> Range<String.Index>? {
     guard let markerRange = text.range(of: marker) else { return nil }

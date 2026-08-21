@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "[0-9]*.[0-9]*.[0-9]*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - name: Check out release tag
+        uses: actions/checkout@v4
+
+      - name: Validate tag and source version
+        run: |
+          source_version="$(sed -n 's/.*current = "\([^"]*\)"/\1/p' Sources/spm/SPMVersion.swift)"
+          test -n "$source_version"
+          printf '%s' "$GITHUB_REF_NAME" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'
+          test "$GITHUB_REF_NAME" = "$source_version"
+
+      - name: Verify package
+        run: |
+          swift build -c release
+          swift test
+          brew install swiftlint
+          swiftlint --strict
+          test "$(.build/release/spm --version)" = "spm $GITHUB_REF_NAME"
+
+      - name: Build immutable release metadata
+        run: |
+          archive="spm-$GITHUB_REF_NAME.tar.gz"
+          curl --fail --location --retry 3 \
+            "https://github.com/0xWDG/spm/archive/refs/tags/$GITHUB_REF_NAME.tar.gz" \
+            --output "$archive"
+          checksum="$(shasum -a 256 "$archive" | awk '{print $1}')"
+          scripts/render-homebrew-formula.sh "$GITHUB_REF_NAME" "$checksum"
+          printf '%s  %s\n' "$checksum" "$archive" > SHA256SUMS
+
+      - name: Validate generated formula
+        run: |
+          ruby -c build/homebrew/spm.rb
+          brew tap-new --no-git 0xwdg/spm-release
+          tap_path="$(brew --repository 0xwdg/spm-release)"
+          cp build/homebrew/spm.rb "$tap_path/Formula/spm.rb"
+          brew style 0xwdg/spm-release
+          brew audit --strict --online 0xwdg/spm-release/spm
+          HOMEBREW_NO_INSTALL_FROM_API=1 brew install --build-from-source 0xwdg/spm-release/spm
+          brew test 0xwdg/spm-release/spm
+          brew uninstall 0xwdg/spm-release/spm
+
+      - name: Require tap credentials
+        run: |
+          if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
+            echo "HOMEBREW_TAP_TOKEN must grant contents access to 0xWDG/homebrew-tap" >&2
+            exit 1
+          fi
+
+      - name: Check out Homebrew tap
+        uses: actions/checkout@v4
+        with:
+          repository: 0xWDG/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Update Homebrew formula
+        run: |
+          mkdir -p homebrew-tap/Formula
+          cp build/homebrew/spm.rb homebrew-tap/Formula/spm.rb
+          cd homebrew-tap
+          if [ -z "$(git status --porcelain -- Formula/spm.rb)" ]; then
+            echo "Formula is already current"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/spm.rb
+          git commit -m "spm $GITHUB_REF_NAME"
+          git push
+
+      - name: Publish GitHub release
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" SHA256SUMS build/homebrew/spm.rb --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              SHA256SUMS build/homebrew/spm.rb \
+              --generate-notes \
+              --title "spm $GITHUB_REF_NAME" \
+              --verify-tag
+          fi

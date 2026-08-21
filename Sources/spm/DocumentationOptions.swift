@@ -28,10 +28,10 @@ public struct DocumentationOptions {
     }
 }
 
-public extension spm {
+public extension SPM {
 /// Parses documentation command arguments into build options.
-static func documentationOptions(from arguments: [String]) -> DocumentationOptions {
-    var target = productName
+static func documentationOptions(from arguments: [String]) throws -> DocumentationOptions {
+    var target = try requiredProductName()
     var outputPath = "docs"
     var hostingBasePath = "/\(productName)"
     var index = 0
@@ -41,18 +41,16 @@ static func documentationOptions(from arguments: [String]) -> DocumentationOptio
 
         switch argument {
         case "--target":
-            target = documentationOptionValue(arguments, at: index, option: argument)
+            target = try documentationOptionValue(arguments, at: index, option: argument)
             index += 2
         case "--output-path", "--output", "-o":
-            outputPath = documentationOptionValue(arguments, at: index, option: argument)
+            outputPath = try documentationOptionValue(arguments, at: index, option: argument)
             index += 2
         case "--hosting-base-path", "--base-path":
-            hostingBasePath = documentationOptionValue(arguments, at: index, option: argument)
+            hostingBasePath = try documentationOptionValue(arguments, at: index, option: argument)
             index += 2
         default:
-            printC("Unknown documentation option: \(argument)", color: CLIColors.red)
-            print(documentationUsage)
-            exit(1)
+            throw SPMCommandError.usage("Unknown documentation option: \(argument)\n\(documentationUsage)")
         }
     }
 
@@ -72,11 +70,10 @@ static var documentationUsage: String {
 }
 
 /// Returns the value that follows a documentation command option.
-static func documentationOptionValue(_ arguments: [String], at index: Int, option: String) -> String {
+static func documentationOptionValue(_ arguments: [String], at index: Int, option: String) throws -> String {
     let valueIndex = index + 1
     guard valueIndex < arguments.count else {
-        printC("Missing value for \(option)", color: CLIColors.red)
-        exit(1)
+        throw SPMCommandError.usage("Missing value for \(option)\n\(documentationUsage)")
     }
 
     return arguments[valueIndex]
@@ -84,24 +81,27 @@ static func documentationOptionValue(_ arguments: [String], at index: Int, optio
 
 /// Finds a documentation catalog for a target if the package provides one.
 static func documentationCatalog(for target: String) -> URL? {
-    let sourceTarget = URL(fileURLWithPath: "Sources").appendingPathComponent(target)
+    let sourceTarget = projectURL("Sources").appendingPathComponent(target)
     let candidates = [
         sourceTarget.appendingPathComponent("\(target).docc"),
         sourceTarget.appendingPathComponent("Documentation.docc"),
-        URL(fileURLWithPath: "Documentation.docc"),
-        URL(fileURLWithPath: "\(target).docc")
+        projectURL("Documentation.docc"),
+        projectURL("\(target).docc")
     ]
 
     return candidates.first { fileManager.fileExists(atPath: $0.path) }
 }
 
 /// Runs a process attached to the current standard streams and returns its exit status.
-static func runProcess(launchPath: String, arguments: [String]) -> Int32 {
-    let process = Process()
-    process.launchPath = launchPath
-    process.arguments = arguments
-    process.launch()
-    process.waitUntilExit()
-    return process.terminationStatus
+static func runProcess(launchPath: String, arguments: [String]) throws -> Int32 {
+    let result = try ProcessRunner().run(
+        executable: launchPath,
+        arguments: arguments,
+        workingDirectory: SPMRuntime.current.workingDirectory,
+        timeout: 300
+    )
+    if !result.standardOutput.isEmpty && !outputOptions.quiet { print(result.standardOutput, terminator: "") }
+    if !result.standardError.isEmpty { FileHandle.standardError.write(Data(result.standardError.utf8)) }
+    return result.status
 }
 }

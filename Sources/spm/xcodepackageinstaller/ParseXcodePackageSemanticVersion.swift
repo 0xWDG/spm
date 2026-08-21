@@ -11,7 +11,7 @@
 
 import Foundation
 
-public extension spm {
+public extension SPM {
 /// Parses a Git tag or ref into a semantic version value.
 static func parseXcodePackageSemanticVersion(_ tag: String) -> XcodePackageSemanticVersion? {
     let clean = tag
