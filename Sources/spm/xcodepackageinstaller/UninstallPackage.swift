@@ -48,7 +48,7 @@ public extension SPM {
         let normalized = normalizedSwiftPackageURL(from: input)
         let requestedName = swiftPackageName(from: input)
         return xcodeObjectRanges(containing: "isa = XCRemoteSwiftPackageReference;", in: project)
-            .compactMap { range in
+            .compactMap { range -> XcodePackageReferenceInfo? in
                 let object = String(project[range])
                 guard let id = xcodeObjectID(from: object), let url = repositoryURL(from: object) else { return nil }
                 let reference = XcodePackageReferenceInfo(id: id, url: url, name: swiftPackageName(from: url))
